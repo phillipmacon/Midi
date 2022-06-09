@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32519.111
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiCli", "MidiCli.csproj", "{B3F0057A-2D4E-462A-B1A0-5808B8DD3113}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MidiConsole", "MidiConsole.csproj", "{B3F0057A-2D4E-462A-B1A0-5808B8DD3113}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
