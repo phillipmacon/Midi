@@ -1,7 +1,7 @@
 // Current level: Prototype
 
-// TODO consider making this a built-in stream type
-// THis is a TEMPORARY interface and is not based on Gary's MIDI buffer work
+// TODO consider making this a built-in stream type like IOutputStream
+// THis is a TEMPORARY interface and is not based on Gary's MIDI buffer work. That work will replace this.
 
 namespace Windows.Devices.Midi2
 {
@@ -12,7 +12,10 @@ namespace Windows.Devices.Midi2
 
 		Boolean CanWrite(UInt16 numberOfWords);
 
-		// TODO
+		void WriteWord(UInt32 word);
+		void WriteWords(UInt32[] words);
 
+
+		// TODO
 	}
 }

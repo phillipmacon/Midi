@@ -15,11 +15,12 @@ namespace winrt::Windows::Devices::Midi2::implementation
     }
     winrt::Windows::Devices::Midi2::MidiUmpEndpoint MidiSession::ConnectToEndpoint(hstring const& id)
     {
-
         // Prototype: Hard-code creating a new network MIDI endpoint
 
+        winrt::Windows::Devices::Midi2::MidiUmpEndpoint tempEndpoint;
 
 
+        return tempEndpoint;
 
     }
 }

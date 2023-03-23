@@ -7,6 +7,17 @@ namespace winrt::Windows::Devices::Midi2::implementation
 {
     bool MidiMessageWriteBuffer::CanWrite(uint16_t numberOfWords)
     {
-        throw hresult_not_implemented();
+        return _buffer.size() < _buffer.capacity();
+    }
+
+
+    void MidiMessageWriteBuffer::WriteWord(uint32_t word)
+    {
+        _buffer.push_back(word);
+    }
+
+    void MidiMessageWriteBuffer::WriteWords(array_view<uint32_t const> words)
+    {
+        // TODO
     }
 }

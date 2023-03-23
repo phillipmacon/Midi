@@ -82,7 +82,9 @@
     <Import Project="PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(BOOST_ROOT);$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -115,56 +117,56 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Enumeration.MidiDeviceInformation.h">
-		<DependentUpon>MidiDeviceInformation.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiDeviceInformation.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Enumeration.MidiDeviceInformationCollection.h">
-		<DependentUpon>MidiDeviceInformationCollection.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiDeviceInformationCollection.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Enumeration.MidiDeviceManager.h">
-		<DependentUpon>MidiDeviceManager.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiDeviceManager.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Enumeration.MidiDeviceWatcher.h">
-		<DependentUpon>MidiDeviceWatcher.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiDeviceWatcher.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="MidiMessageReadBuffer.h">
-		<DependentUpon>MidiMessageReadBuffer.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiMessageReadBuffer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="MidiMessageWriteBuffer.h">
-		<DependentUpon>MidiMessageWriteBuffer.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiMessageWriteBuffer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="MidiSession.h">
-		<DependentUpon>MidiSession.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiSession.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="MidiUmpEndpoint.h">
-		<DependentUpon>MidiUmpEndpoint.idl</DependentUpon>
-	</ClInclude>
+      <DependentUpon>MidiUmpEndpoint.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Enumeration.MidiDeviceInformation.cpp">
-		<DependentUpon>MidiDeviceInformation.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiDeviceInformation.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Enumeration.MidiDeviceInformationCollection.cpp">
-		<DependentUpon>MidiDeviceInformationCollection.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiDeviceInformationCollection.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Enumeration.MidiDeviceManager.cpp">
-		<DependentUpon>MidiDeviceManager.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiDeviceManager.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Enumeration.MidiDeviceWatcher.cpp">
-		<DependentUpon>MidiDeviceWatcher.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiDeviceWatcher.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="MidiMessageReadBuffer.cpp">
-		<DependentUpon>MidiMessageReadBuffer.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiMessageReadBuffer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="MidiMessageWriteBuffer.cpp">
-		<DependentUpon>MidiMessageWriteBuffer.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiMessageWriteBuffer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="MidiSession.cpp">
-		<DependentUpon>MidiSession.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiSession.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="MidiUmpEndpoint.cpp">
-		<DependentUpon>MidiUmpEndpoint.idl</DependentUpon>
-	</ClCompile>
+      <DependentUpon>MidiUmpEndpoint.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -183,6 +185,7 @@
   <ItemGroup>
     <None Include="EnumerationREADME.md" />
     <None Include="packages.config" />
+    <None Include="README.md" />
     <None Include="Windows_Devices_Midi2.def" />
   </ItemGroup>
   <ItemGroup>
