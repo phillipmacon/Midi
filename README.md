@@ -2,11 +2,7 @@
 
 **While this project is closed to the public, everything in this repo is confidential under MIDI Association / AMEI NDA. You have been invited to provide early feedback or contributions to what will eventually be a fully open source project. Please do not share or discuss outside of this repo and the associated Discord server.**
 
-Want to provide input to help shape early development of the API, tools, and more? Please complete this form while it is still open: https://forms.office.com/r/dGBRuTkncR
-
---
-
-This project is the next-generation MIDI API for Windows, including MIDI 1.0, MIDI CI, and MIDI 2.0. It includes enhancements, a new USB class driver, and a suite of essential tools. The project adds many enhancements and bug fixes to our MIDI 1.0 support, and importantly adds support for the latest revisions to MIDI CI and MIDI 2.0.
+This project is the next-generation MIDI API for Windows, including MIDI 1.0, MIDI CI, and MIDI 2.0. It includes enhancements, a new USB class driver, new transports, and a suite of essential tools. The project adds many enhancements and bug fixes to our MIDI 1.0 support, and importantly adds support for the latest revisions to MIDI CI and MIDI 2.0.
 
 > The open source USB MIDI 2.0 driver has been generously donated by [AMEI](https://www.amei.or.jp/),
 > the **Association of Musical Electronics Industry**, and developed by [AmeNote<sup>TM</sup>](https://www.AmeNote.com/) in partnership with
@@ -95,7 +91,6 @@ The repo contains many different projects and stand-alone files which make up Wi
 
 Note that any internal changes made to Windows to support the driver or MIDI API are not contained in this repo.
 
-
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -104,14 +99,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 See [SECURITY.md](SECURITY.md)
 
-## Device, Programming Language, and API Compatibility
-
-See [README-Compatibility.md](README-Compatibility.md)
-
-## Component Redistribution
-
-See [README-Redistribution.md](README-Redistribution.md)
-
 ## Trademarks
 
 This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow
@@ -119,7 +106,7 @@ This project may contain trademarks or logos for projects, products, or services
 
 ## Relevant specifications
 
-These are the specifications which apply to this project today.
+These are the specifications which apply to this project today. (TODO: Update with latest specs at time of publishing)
 
 * [MIDI 2.0](https://www.midi.org/specifications/midi-2-0-specifications)
 * [USB MIDI 2.0](https://www.midi.org/specifications/midi-transports-specifications/usb/usb-midi-2-0-2)
@@ -130,3 +117,5 @@ These are the specifications which apply to this project today.
 
 [![NAMM 2022 MIDI 2.0 Update](https://img.youtube.com/vi/69hzeBFOPfo/mqdefault.jpg)](https://www.youtube.com/watch?v=69hzeBFOPfo)
 [![Mike Kent on MIDI 2.0 Protocol Messages and UMP](https://img.youtube.com/vi/Kky1nlwz8-8/mqdefault.jpg)](https://www.youtube.com/watch?v=Kky1nlwz8-8)
+
+* [MIDI @ 40 and the new Windows MIDI Services](https://devblogs.microsoft.com/windows-music-dev/midi-40-and-the-new-windows-midi-services/)
