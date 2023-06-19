@@ -37,10 +37,15 @@ Environment:
 
 --*/
 
+extern "C"
+{
+
 #include "driver.h"
 #include "device.tmh"
 
 #include "Common.h"
+
+#include "Descriptors.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, USBUMPDriverCreateDevice)
@@ -383,6 +388,8 @@ Return Value:
     ULONG                                   waitWakeEnable = 0;
     USB_DEVICE_DESCRIPTOR                   deviceDescriptor;
     PUSB_CONFIGURATION_DESCRIPTOR           pConfigurationDescriptor = NULL;
+    PUSB_INTERFACE_DESCRIPTOR               pInterfaceDescriptor = NULL;
+    PVOID                                   pCurrentDescriptorPosition = NULL;
     USHORT                                  configurationDescriptorSize = 0;
     WDF_OBJECT_ATTRIBUTES                   deviceConfigAttrib;
     UCHAR                                   numInterfaces;
@@ -431,10 +438,10 @@ Return Value:
         pDeviceContext->UsbDeviceTraits = 0;
     }
 
-
     //
     // Get device descriptor information
     // 
+
     WdfUsbTargetDeviceGetDeviceDescriptor(
         pDeviceContext->UsbDevice,
         &deviceDescriptor);
@@ -729,6 +736,156 @@ Return Value:
         }
         pDeviceContext->UsbMIDIStreamingAlt = 0;    // store that original interface
     }
+
+
+    /******************************************************************/
+    // WORKING AREA
+    /*******************************************************************/
+    // Get Pointer into Configuration Descriptor for in use Interface Descriptor
+
+    pInterfaceDescriptor = USBD_ParseConfigurationDescriptorEx(
+        pConfigurationDescriptor,                   // The Configuration Descriptor
+        (PVOID)pConfigurationDescriptor,            // start parsing at beginning
+        (LONG)-1,                                   // InterfaceNumber not part of search
+        (LONG)pDeviceContext->UsbMIDIStreamingAlt,  // Original or alternate interface selected
+        (LONG)interfaceDescriptor.bInterfaceClass,  // The interface class
+        (LONG)interfaceDescriptor.bInterfaceSubClass, // interface subclass
+        (LONG)-1                                    // protocol not part of search
+    );
+
+    if (!pInterfaceDescriptor)
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+            "Could not locate Interface Descriptor in Configuration Descriptor.\n");
+        status = STATUS_SEVERITY_ERROR;
+        goto SelectExit;
+    }
+
+    // now look for endpoint data after interface descriptor - dependant if MIDI 2.0 or not
+    // set current descriptor position to after interface descriptor
+    pCurrentDescriptorPosition = (PVOID)((PCHAR)pInterfaceDescriptor + sizeof(USB_INTERFACE_DESCRIPTOR));
+
+    // Should be Class specific MS Interface Descriptor, same structure for both USB MIDI 1.0 and 2.0
+    PUSBMIDI_CSMSINTERFACE pCSMSInterface = (PUSBMIDI_CSMSINTERFACE)pCurrentDescriptorPosition;
+
+    // Check content valid
+    if (
+        !(pCSMSInterface->bLength == 0x07)                                      // Right length
+        || !(pCSMSInterface->bDescriptorType == USBMIDI_CSMSINTERFACE_TYPE)     // Right type
+        || !(pCSMSInterface->bDescriptorSubtype == 0x01)                        // Right subtype
+        || !(pCSMSInterface->bcdMSC ==
+               ((pDeviceContext->UsbMIDIStreamingAlt == 1) ? 0x0200 : 0x0100))  // Right MSC
+        || !(pCSMSInterface->wTotalLength >= 7)
+        )
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+            "Error parsing Class specific MS Interface Descriptor.\n");
+        status = STATUS_SEVERITY_ERROR;
+        goto SelectExit;
+    }
+    
+    // set current descriptor position to after class specific descriptors
+    pCurrentDescriptorPosition = (PVOID)((PCHAR)pCurrentDescriptorPosition + pCSMSInterface->wTotalLength);
+
+    // Parse endpoint descriptors
+    // By definition, next descriptor should be endpoint descriptor
+    for (int descCount = 0; descCount < pInterfaceDescriptor->bNumEndpoints; descCount++)
+    {
+        // First should be endpoint descriptor, making sure to account for special USB MIDI 1.0
+        // endpoint descriptor in size
+        PUSB_ENDPOINT_DESCRIPTOR pEndpoint = (PUSB_ENDPOINT_DESCRIPTOR)pCurrentDescriptorPosition;
+
+        // Check valid
+        if (
+            !(pEndpoint->bLength == ((pDeviceContext->UsbMIDIStreamingAlt == 1) ? 7 : 9))
+            || !(pEndpoint->bDescriptorType == USB_ENDPOINT_DESCRIPTOR_TYPE)
+            )
+        {
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+                "Error parsing Expected ENDPOINT Descriptor.\n");
+            status = STATUS_SEVERITY_ERROR;
+            goto SelectExit;
+        }
+
+        // set current descriptor position to after class specific descriptors
+        pCurrentDescriptorPosition = (PVOID)((PCHAR)pCurrentDescriptorPosition + pEndpoint->bLength);
+
+        // Class Specific Endpoint Descriptor
+        PUSBMIDI_CSMSENDPOINT pCSEndpoint = (PUSBMIDI_CSMSENDPOINT)pCurrentDescriptorPosition;
+
+        // Confirm expected type
+        if (pCSEndpoint->bDescriptorType != USBMIDI_CSMSENDPOINT_TYPE)
+        {
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+                "Error parsing Expected Class Specific Endpoing Descriptor.\n");
+            status = STATUS_SEVERITY_ERROR;
+            goto SelectExit;
+        }
+
+        // Confirm that we will not be exceeding memory allocated
+        if ((PVOID)((PCHAR)pCurrentDescriptorPosition + pCSEndpoint->bLength)
+            > (PVOID)((PCHAR)pConfigurationDescriptor + configurationDescriptorSize))
+        {
+            TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+                "Error parsing descriptors, no enough information.\n");
+            status = STATUS_SEVERITY_ERROR;
+            goto SelectExit;
+        }
+
+        UCHAR grpListSize;
+        WDFMEMORY* pGrpList;
+
+        // Point to correct dataset based on endpoint direction
+        if (pEndpoint->bEndpointAddress & 0x80)
+        {
+            // MSB 1 meaning that IN endpoint
+            pDeviceContext->numInGrpTrmBlks = grpListSize = pCSEndpoint->bNumGrpTrmBlock;
+            pGrpList = &pDeviceContext->DeviceInGrpList;
+        }
+        else
+        {
+            // OUT endpoint
+            pDeviceContext->numOutGrpTrmBlks = grpListSize = pCSEndpoint->bNumGrpTrmBlock;
+            pGrpList = &pDeviceContext->DeviceOutGrpList;
+        }
+
+        if (grpListSize)
+        {
+            // Allocate memory space for the list and populate
+            WDF_OBJECT_ATTRIBUTES_INIT(&deviceConfigAttrib);
+            deviceConfigAttrib.ParentObject = pDeviceContext->UsbDevice;
+            status = WdfMemoryCreate(
+                &deviceConfigAttrib,
+                NonPagedPool,
+                USBUMP_POOLTAG,
+                grpListSize,
+                pGrpList,
+                NULL
+            );
+            if (!NT_SUCCESS(status))
+            {
+                TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "Error allocating memory for Group Terminal List.\n");
+                return(status);
+            }
+
+            // Copy list to buffer
+            status = WdfMemoryCopyFromBuffer(
+                *pGrpList,
+                NULL,
+                (PVOID)&pCSEndpoint->baAssoGrpTrmBlkID,
+                grpListSize
+            );
+            if (!NT_SUCCESS(status))
+            {
+                TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE, "Error copying memory for Group Terminal List.\n");
+                return(status);
+            }
+
+            // set current descriptor position to after class specific descriptors
+            pCurrentDescriptorPosition = (PVOID)((PCHAR)pCurrentDescriptorPosition + pCSEndpoint->bLength);
+        }
+    }
+
     // Setup settings pairs for MIDI streaming interface
     pSettingPairs[1].UsbInterface = pDeviceContext->UsbMIDIStreamingInterface;
     pSettingPairs[1].SettingIndex = pDeviceContext->UsbMIDIStreamingAlt;
@@ -1569,6 +1726,24 @@ BOOLEAN USBUMPDriverSendToUSB(
     _In_ PDEVICE_CONTEXT    pDeviceContext,
     _In_ BOOLEAN            deleteRequest
 )
+/*++
+
+Routine Description:
+
+    Helper routine to format and send to USB device.
+
+Arguments:
+
+    usbRequest      handle to request to format for send
+    reqMemory       memory for request for send - the data to send
+    pipe            the output endpoint pipe
+    Length          size of memory to send
+    pDeviceContext  pointer to device contect
+    deleteRequest   true to delete request on completion, false means managed elsewhere
+
+Return Value: true on success
+
+--*/
 {
     status = WdfUsbTargetPipeFormatRequestForWrite(pipe,
         usbRequest,
@@ -1695,10 +1870,10 @@ Routine Description:
 
 Arguments:
 
-    Context - Driver supplied context
-    Device - Device handle
-    Request - Request handle
-    Params - request completion params
+    Request - the WDF Request structure
+    Target - the driver IO target
+    CompletionParams - the parameters to pass back for completion
+    Context - the driver context
 
 Return Value:
     None
@@ -1736,4 +1911,6 @@ Return Value:
     //WdfObjectDelete(Request);
 
     return;
+}
+
 }

@@ -99,8 +99,14 @@ typedef struct _DEVICE_CONTEXT
     umpToBytestream             umpToStream;
     MIDI_STREAM_TYPE            midi1UsbPkt;
 
+    // Stored parameters for working with MIDI
+    // Either group terminal block information if USB MIDI 2.0 or Jack information if USB MIDI 1.0
+    // 
+    UCHAR                       numInGrpTrmBlks;
+    UCHAR                       numOutGrpTrmBlks;
+
     //
-    // The folloiwng fileds are used to store device configuration information
+    // The folloiwng fields are used to store device configuration information
     // relevant to the connected device.
     // 
     WDFMEMORY                       DeviceConfigDescriptorMemory;
@@ -108,6 +114,8 @@ typedef struct _DEVICE_CONTEXT
     WDFMEMORY                       DeviceNameMemory;
     WDFMEMORY                       DeviceSNMemory;
     WDFMEMORY                       DeviceGTBMemory;
+    WDFMEMORY                       DeviceInGrpList;
+    WDFMEMORY                       DeviceOutGrpList;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
