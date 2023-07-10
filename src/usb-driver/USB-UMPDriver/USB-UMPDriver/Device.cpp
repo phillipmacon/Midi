@@ -53,6 +53,7 @@ extern "C"
 #pragma alloc_text (PAGE, USBUMPDriverEvtDeviceD0Entry)
 #pragma alloc_text (PAGE, USBUMPDriverEvtDeviceD0Exit)
 #pragma alloc_text (PAGE, USBUMPDriverSelectInterface)
+#pragma alloc_text (PAGE, USBUMPDriverCreateGTBs)
 #pragma alloc_text (PAGE, USBUMPDriverEnumeratePipes)
 #pragma alloc_text (NONPAGE, USBUMPDriverEvtReadComplete)
 #pragma alloc_text (NONPAGE, USBUMPDriverEvtReadFailed)
@@ -737,10 +738,6 @@ Return Value:
         pDeviceContext->UsbMIDIStreamingAlt = 0;    // store that original interface
     }
 
-
-    /******************************************************************/
-    // WORKING AREA
-    /*******************************************************************/
     // Get Pointer into Configuration Descriptor for in use Interface Descriptor
 
     pInterfaceDescriptor = USBD_ParseConfigurationDescriptorEx(
@@ -916,6 +913,73 @@ SelectExit:
         ExFreePoolWithTag(pSettingPairs, USBUMP_POOLTAG);
     }
 
+    return status;
+}
+
+NTSTATUS
+USBUMPDriverCreateGTBs(
+    _In_ WDFDEVICE      Device
+)
+/*++
+
+Routine Description:
+
+    Helper function to parse descriptor information and create
+    Group Terminal Blocks to be queried as device properties.
+
+Arguments:
+
+    Device - handle to a device
+
+Return Value:
+
+    NT status value
+
+*/
+{
+    NTSTATUS                                status = STATUS_SEVERITY_SUCCESS;
+    PDEVICE_CONTEXT                         pDeviceContext;
+    USBMIDI_GS_TRM_BLOCK_HEADER             gtbHeader;
+    WDF_MEMORY_DESCRIPTOR                   gtbMemory;
+    ULONG                                   bytesTransferred;
+
+    WDF_MEMORY_DESCRIPTOR_INIT_BUFFER(
+        &gtbMemory,
+        &gtbHeader,
+        sizeof(USBMIDI_GS_TRM_BLOCK_HEADER)
+    );
+
+    pDeviceContext = DeviceGetContext(Device);
+
+    WDF_USB_CONTROL_SETUP_PACKET controlSetupPacket;
+
+    // First need to get GSTRM_BLOCK_HEADER to get total length
+    WDF_USB_CONTROL_SETUP_PACKET_INIT_VENDOR(
+        &controlSetupPacket,                // setup packet
+        BmRequestDeviceToHost,              // Direction
+        BmRequestToDevice,                  // Recipient
+        0x06, //get descriptor              // bRequest
+        ((UINT16)USBMIDI_CS_GR_TRM_BLOCK << 8) | (UINT16)USBMIDI_GR_TRM_BLOCK_SUBTYPE,       // Value
+        0                                   // Index
+    );
+
+
+    status = WdfUsbTargetDeviceSendControlTransferSynchronously(
+        pDeviceContext->UsbDevice,      // UsbDevice
+        NULL,                           // Request
+        NULL,                           // RequestOptions
+        &controlSetupPacket,            // SetupPacket
+        &gtbMemory,                     // MemoryDescriptor
+        &bytesTransferred               // BytesTransferred
+    );
+    if (!NT_SUCCESS(status))
+    {
+        TraceEvents(TRACE_LEVEL_ERROR, TRACE_DEVICE,
+            "Error in reading group terminal block header.\n");
+        goto GTB_EXIT;
+    }
+
+GTB_EXIT:
     return status;
 }
 

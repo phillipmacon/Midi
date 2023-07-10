@@ -174,6 +174,15 @@ USBUMPDriverSelectInterface(
 );
 
 //
+// Function to Build Group Terminal Block from
+// descriptor data
+// 
+NTSTATUS
+USBUMPDriverCreateGTBs(
+    _In_ WDFDEVICE      Device
+);
+
+//
 // Function to connect and prepare pipes for use
 //
 NTSTATUS
